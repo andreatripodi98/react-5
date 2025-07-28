@@ -7,25 +7,32 @@ import Error from './Error'
 class CommentArea extends Component {
   state = {
     comments: [],
-    isLoading: true,
+    isLoading: false,
     isError: false,
   }
 
-  componentDidMount = async () => {
+  componentDidUpdate(prevProps) {
+    if (prevProps.asin !== this.props.asin && this.props.asin) {
+      this.fetchComments(this.props.asin)
+    }
+  }
+
+  fetchComments = async (asin) => {
+    this.setState({ isLoading: true, isError: false })
+
     try {
       let response = await fetch(
-        'https://striveschool-api.herokuapp.com/api/comments/' +
-          this.props.asin,
+        'https://striveschool-api.herokuapp.com/api/comments/' + asin,
         {
           headers: {
             Authorization: 'Bearer inserisci-qui-il-tuo-token',
           },
         }
       )
-      console.log(response)
+
       if (response.ok) {
         let comments = await response.json()
-        this.setState({ comments: comments, isLoading: false, isError: false })
+        this.setState({ comments, isLoading: false, isError: false })
       } else {
         this.setState({ isLoading: false, isError: true })
       }
@@ -36,15 +43,20 @@ class CommentArea extends Component {
   }
 
   render() {
+    const { comments, isLoading, isError } = this.state
+
+    if (!this.props.asin) return <p>Seleziona un libro per vedere i commenti.</p>
+
     return (
       <div className="text-center">
-        {this.state.isLoading && <Loading />}
-        {this.state.isError && <Error />}
+        {isLoading && <Loading />}
+        {isError && <Error />}
         <AddComment asin={this.props.asin} />
-        <CommentList commentsToShow={this.state.comments} />
+        <CommentList commentsToShow={comments} />
       </div>
     )
   }
 }
 
 export default CommentArea
+
